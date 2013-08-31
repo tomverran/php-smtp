@@ -1,0 +1,25 @@
+{
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://carefulcoder.co.uk/composer"
+        }
+    ],
+
+    "autoload": {
+        "psr-0": {
+            "Smtp": "",
+            "Event": "",
+            "Net": ""
+        }
+    },
+
+    "require": {
+    },
+
+    "config": {
+   		"preferred-install": "dist"
+   	},
+
+   	"minimum-stability": "dev"
+}
