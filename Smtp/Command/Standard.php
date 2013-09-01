@@ -38,6 +38,46 @@ class Standard extends CommandSet
     }
 
     /**
+     * @command MAIL FROM
+     * This is quite a key command, really.
+     * @param string $command What the client said to us
+     * @param Message $message The message to modify
+     * @return \Smtp\Command\Library\Response
+     */
+    public function mail($command, Message $message)
+    {
+        $command = trim($command);
+        if ($message->getClientIdentity()) {
+
+            $pos1 = strpos($command, '<');
+            $pos2 = strrpos($command, '>');
+
+            if ($pos1 === 0 && $pos2 !== false) {
+                $address = substr($command, 1, $pos2);
+                $message->setReturnPath($address);
+
+                return new Response('Gotcha', Response::MAIL_ACTION_OKAY_COMPLETED);
+            } else {
+                return new Response('Syntax error, missing some angle brackets.'.$pos1 .', '.$pos2.': '.$command,
+                                    Response::SYNTAX_ERROR_COMMAND_UNRECOGNISED);
+            }
+        }
+
+        return new Response('It is rude to send mail without saying HELO', Response::BAD_COMMAND_SEQUENCE);
+    }
+
+    /**
+     * @command RCPT TO
+     * Set who this email is supposed to go to. Since it is the 21st century we reject any relay requests.
+     * @param string $command The command the user ehas given
+     * @param Message $message The message to updat
+     */
+    public function rcptTo($command, Message $message)
+    {
+
+    }
+
+    /**
      * @command NOOP
      * @return Response
      */
@@ -54,8 +94,8 @@ class Standard extends CommandSet
      */
     public function reset($command, Message $message)
     {
-        $message = new Message(); //reset the message to an initial state by overwriting it
-        return new Response('Everything has been reset', Response::MAIL_ACTION_OKAY_COMPLETED);
+        $message->reset();
+        return new Response('Okay', Response::MAIL_ACTION_OKAY_COMPLETED);
     }
 
     /**

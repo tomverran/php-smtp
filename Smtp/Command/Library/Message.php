@@ -18,7 +18,44 @@ class Message
      * @var string The identity of the client,
      * as transmitted with the HELO command
      */
-    private $clientIdentity = null;
+    private $clientIdentity;
+
+    /**
+     * @var string The return path specified
+     * by the client, i.e. who the email is from
+     */
+    private $returnPath;
+
+    /**
+     * @param string $returnPath
+     */
+    public function setReturnPath($returnPath) {
+        $this->returnPath = $returnPath;
+    }
+
+    /**
+     * @return string
+     */
+    public function getReturnPath() {
+        return $this->returnPath;
+    }
+
+    /**
+     * Construct our message by calling reset
+     * which should set it to an initial state
+     */
+    public function __construct()
+    {
+        $this->reset();
+    }
+
+    /**
+     * (re)set our message to an initial state.
+     */
+    public function reset()
+    {
+        $this->clientIdentity = null;
+    }
 
     /**
      * Get the identity of our client

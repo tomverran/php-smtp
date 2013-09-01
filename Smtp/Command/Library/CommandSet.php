@@ -45,7 +45,8 @@ abstract class CommandSet
     {
         foreach ($this->commandMap as $validCommand=>$function) {
             if (strpos($command, $validCommand) === 0) {
-                $response = call_user_func_array($function, array(preg_replace('/'.preg_quote($validCommand, '/').'/', $command, 1), $message));
+                $commandWithoutCommand = preg_replace('/'.preg_quote($validCommand, '/').'/', '', $command, 1);
+                $response = call_user_func_array($function, array($commandWithoutCommand, $message));
                 if ($response instanceof Response) {
                     return $response;
                 }
