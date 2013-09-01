@@ -38,7 +38,7 @@ class Client
      */
     public function send($message)
     {
-        \socket_write($this->socket, $message, strlen($message));
+        \fwrite($this->socket, $message);
     }
 
     /**
@@ -76,7 +76,7 @@ class Client
 
     public function disconnect()
     {
-        \socket_close($this->socket);
+        \fclose($this->socket);
     }
 
     public function isConnected()

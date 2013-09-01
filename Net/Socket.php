@@ -47,18 +47,12 @@ class Socket implements Pollable
     );
 
     /**
-     * Construct this Socket, setting up an actual non blocking socket listening on port 25
-     * with PHP's rather archaic procedural library
+     * Construct this Socket, setting up a socket listening on port 25
      */
     public function __construct()
     {
         //create a non-blocking TCP socket to receive emails on
-        $this->socket = \socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-        \socket_set_nonblock($this->socket);
-
-        //we want to listen on localhost:25 for connections
-        \socket_bind($this->socket, '127.0.0.1', 25);
-        \socket_listen($this->socket);
+        $this->socket = \stream_socket_server('tcp://127.0.0.1:25');
     }
 
     /**
@@ -89,23 +83,42 @@ class Socket implements Pollable
      */
     public function poll()
     {
-        //handle new connections
-        if ($connection = @\socket_accept($this->socket)) {
-            $this->clients[] = new Client($connection);
-            $this->runHandlers(Socket::CONNECT, array(end($this->clients)));
-            $this->buffers[] = ''; //initialise an empty line buffer for the client
+
+        $sockets = array($this->socket);
+        foreach ($this->clients as $client) {
+            $sockets[] = $client->getConnection();
         }
 
-        //handle receiving data
-        foreach ($this->clients as $id => $client) {
-            /** @var Client $client */
-            $connection = $client->getConnection();
-            if ($data = \socket_read($connection, 1)) {
+        $write = array();
+        $except = array();
+
+        //now wait for something to happen to one of our sockets
+        \stream_select($sockets, $write, $except, null);
+
+        foreach ($sockets as $socket)
+        {
+            //if its our main listen socket
+            //then someone must want to connect
+            if ($socket == $this->socket) {
+                $connection = \stream_socket_accept($this->socket);
+                $id = (int)$connection;
+
+                $this->clients[$id] = new Client($connection);
+                $this->runHandlers(Socket::CONNECT, array(end($this->clients)));
+                $this->buffers[$id] = ''; //initialise an empty line buffer for the client
+            } else {
+
+                //this is highly dodgy
+                $id = (int)$socket;
+
+                //else find out what the client
+                //has to say for themselves
+                $data = \fread($socket, 1);
 
                 $this->buffers[$id] .= $data;
                 if (substr($this->buffers[$id], -2) == "\r\n") {
-                    $this->runHandlers(Socket::DATA, array($client, substr($this->buffers[$id], 0, -2)));
-                    $this->buffers[$id] = '';
+                    $this->runHandlers(Socket::DATA, array($this->clients[$id], substr($this->buffers[$id], 0, -2)));
+                    $this->buffers[(int)$socket] = '';
                 }
             }
         }
