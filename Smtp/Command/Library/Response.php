@@ -94,6 +94,9 @@ class Response
      */
     const FLAG_DISCONNECT = 1;
 
+    //route the subsequent command to me please until I return a non multiline response
+    const FLAG_MULTILINE = 2;
+
     /**
      * Constructor which provides shortcuts to initialise
      * the various properties of this response

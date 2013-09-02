@@ -18,6 +18,12 @@ abstract class CommandSet
     private $commandMap = array();
 
     /**
+     * @var callable|null A callable that returned FLAG_GREEDY as part of a Response
+     * to a previous command so should be unconditionally routed data until further notice
+     */
+    private $greedyCallable = null;
+
+    /**
      * Construct this commandset
      * this builds up a dynamic list of functions to execute based on commands
      * with the programmer's best friend, reflection!
@@ -39,18 +45,44 @@ abstract class CommandSet
      * Run the given command sent from the client
      * @param string $command The unedited line from the client
      * @param Message $message The message object to update
-     * @return \Smtp\Command\Library\Response
+     * @return \Smtp\Command\Library\Response|null
      */
     public function run($command, Message $message)
     {
-        foreach ($this->commandMap as $validCommand=>$function) {
-            if (strpos($command, $validCommand) === 0) {
-                $commandWithoutCommand = preg_replace('/'.preg_quote($validCommand, '/').'/', '', $command, 1);
-                $response = call_user_func_array($function, array($commandWithoutCommand, $message));
-                if ($response instanceof Response) {
-                    return $response;
+        //init response
+        $response = false;
+        $callableCalled = null;
+
+        //first call any greedy callables
+        if (is_callable($this->greedyCallable)) {
+            $response = call_user_func_array($this->greedyCallable, array($command, $message));
+            $callableCalled = $this->greedyCallable;
+        } else {
+
+            //normal case is to find a callable matching our command data
+            foreach ($this->commandMap as $validCommand=>$function) {
+                if (strpos($command, $validCommand) === 0) {
+                    $commandWithoutCommand = preg_replace('/'.preg_quote($validCommand, '/').'/', '', $command, 1);
+                    $response = call_user_func_array($function, array($commandWithoutCommand, $message));
+                    $callableCalled = $function;
+                    break;
                 }
             }
+        }
+
+        //now process the response from wherever
+        if ($response instanceof Response) {
+
+            //save our greedy callable to unconditionally call next time
+            if ($response->hasFlag(Response::FLAG_MULTILINE)) {
+                $this->greedyCallable = $callableCalled;
+            } else {
+                $this->greedyCallable = null;
+            }
+
+            return $response;
+        } else if ($response === null) {
+            return null;
         }
 
         //if we got here then we had no functions with which we could parse the command so eh

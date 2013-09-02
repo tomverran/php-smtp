@@ -34,7 +34,7 @@ class Standard extends CommandSet
             return new Response('And a hearty HELO to you too', Response::MAIL_ACTION_OKAY_COMPLETED);
         }
 
-        return new Response('You\'ve already said that', Response::BAD_COMMAND_SEQUENCE);
+        return new Response("You've already said that", Response::BAD_COMMAND_SEQUENCE);
     }
 
     /**
@@ -56,9 +56,9 @@ class Standard extends CommandSet
                 $address = substr($command, 1, $pos2);
                 $message->setReturnPath($address);
 
-                return new Response('Gotcha', Response::MAIL_ACTION_OKAY_COMPLETED);
+                return new Response('OK', Response::MAIL_ACTION_OKAY_COMPLETED);
             } else {
-                return new Response('Syntax error, missing some angle brackets.'.$pos1 .', '.$pos2.': '.$command,
+                return new Response('Syntax error, missing some angle brackets.',
                                     Response::SYNTAX_ERROR_COMMAND_UNRECOGNISED);
             }
         }
@@ -68,13 +68,52 @@ class Standard extends CommandSet
 
     /**
      * @command RCPT TO
-     * Set who this email is supposed to go to. Since it is the 21st century we reject any relay requests.
-     * @param string $command The command the user ehas given
-     * @param Message $message The message to updat
+     * Set who this email is supposed to go to. Since it is the 21st century we ignore forward paths.
+     * @param string $command The command the user has given
+     * @param Message $message The message to update
+     * @return \Smtp\Command\Library\Response
      */
     public function rcptTo($command, Message $message)
     {
+        $command = trim($command);
+        if (!$message->getReturnPath()) {
+            return new Response('You need to MAIL TO first, silly.', Response::BAD_COMMAND_SEQUENCE);
+        }
 
+        $pos1 = strpos($command, '<');
+        $pos2 = strrpos($command, '>');
+
+        if ($pos1 !== 0 || $pos2 === false) {
+            return new Response('Syntax error, missing some angle brackets.',
+                                Response::SYNTAX_ERROR_COMMAND_UNRECOGNISED);
+        }
+
+        $forwardPath = substr($command, 1, $pos2);
+        $finalForwardAddress = explode(',', $forwardPath);
+        $message->setForwardPath($finalForwardAddress);
+
+        return new Response('OK', Response::MAIL_ACTION_OKAY_COMPLETED);
+    }
+
+    /**
+     * @command DATA
+     * @param string $command The command the user sent. In this case it'll be their data.
+     * @param Message $message The message object to modify
+     * @return \Smtp\Command\Library\Response|null
+     */
+    public function data($command, Message $message)
+    {
+        if ($message->getData() === null) {
+            $message->addData(''); //bit hacky, make our message not null so we get out of this conditional next time
+            return new Response('I am all ears', Response::START_MAIL_INPUT, Response::FLAG_MULTILINE);
+        }
+
+        if (trim($command) == '.') {
+            return new Response('Right-o', Response::MAIL_ACTION_OKAY_COMPLETED);
+        }
+
+        $message->addData($command);
+        return null;
     }
 
     /**
@@ -95,7 +134,7 @@ class Standard extends CommandSet
     public function reset($command, Message $message)
     {
         $message->reset();
-        return new Response('Okay', Response::MAIL_ACTION_OKAY_COMPLETED);
+        return new Response('OK', Response::MAIL_ACTION_OKAY_COMPLETED);
     }
 
     /**

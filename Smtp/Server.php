@@ -70,11 +70,14 @@ class Server
 
         //If everything is okay we'll send the message to our CommandSet to parse it.
         $response = $this->commandSet->run($data, $client->getData('Message'));
-        $client->send("$response");
+        if ($response instanceof Response) {
+            $client->send("$response");
 
-        //the command specified that we should now disconnect
-        if ($response->hasFlag(Response::FLAG_DISCONNECT)) {
-            $client->disconnect();
+            //the command specified that we should now disconnect
+            if ($response->hasFlag(Response::FLAG_DISCONNECT)) {
+                $client->disconnect();
+            }
         }
+
     }
 }

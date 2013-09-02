@@ -13,6 +13,11 @@ namespace Smtp\Command\Library;
  */
 class Message
 {
+    /**
+     * @var string|null Actual message data.
+     * Can be either null or some kind of string
+     */
+    private $data;
 
     /**
      * @var string The identity of the client,
@@ -25,6 +30,13 @@ class Message
      * by the client, i.e. who the email is from
      */
     private $returnPath;
+
+    /**
+     * @var string The forward path specified.
+     * We ignore all of it except the final address
+     * so this is essentially the To: address.
+     */
+    private $forwardPath;
 
     /**
      * @param string $returnPath
@@ -55,6 +67,9 @@ class Message
     public function reset()
     {
         $this->clientIdentity = null;
+        $this->forwardPath = null;
+        $this->returnPath = null;
+        $this->data = null;
     }
 
     /**
@@ -73,5 +88,37 @@ class Message
     public function setClientIdentity($identity)
     {
         $this->clientIdentity = $identity;
+    }
+
+    /**
+     * Set the forward path of our email
+     * @param $forwardPath
+     */
+    public function setForwardPath($forwardPath)
+    {
+        $this->forwardPath = $forwardPath;
+    }
+
+    /**
+     * Get the forward path of our email
+     * @return string
+     */
+    public function getForwardPath()
+    {
+        return $this->forwardPath;
+    }
+
+    public function addData($data)
+    {
+        if ($this->data == null) {
+            $this->data = '';
+        }
+
+        $this->data .= $data;
+    }
+
+    public function getData()
+    {
+        return $this->data;
     }
 }
