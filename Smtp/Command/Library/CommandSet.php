@@ -6,6 +6,7 @@
  */
 
 namespace Smtp\Command\Library;
+use Smtp\Message\Message;
 
 
 abstract class CommandSet

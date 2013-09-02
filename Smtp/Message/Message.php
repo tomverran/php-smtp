@@ -5,11 +5,11 @@
  * @since 29/08/13
  */
 
-namespace Smtp\Command\Library;
+namespace Smtp\Message;
 
 /**
  * A class modelling an email to be received from a client
- * @package Smtp\Command
+ * @package Smtp\Message
  */
 class Message
 {

@@ -9,11 +9,11 @@ namespace Smtp;
 use Event\Loop;
 use Net\Client;
 use Net\Socket;
-use Smtp\Command\Library\Message;
+use Smtp\Message\Message;
 use Smtp\Command\Library\Response;
 use Smtp\Command\Library\CommandSet;
 use Smtp\Command\Standard;
-
+use Smtp\Message\MysqlRepository;
 class Server
 {
     /**
@@ -25,6 +25,11 @@ class Server
      * @var CommandSet
      */
     private $commandSet;
+
+    /**
+     * @var \Smtp\Message\Repository
+     */
+    private $repository;
 
     /**
      * Create a new PHP SMTP server.
@@ -39,6 +44,18 @@ class Server
         $this->socket->addHandler(Socket::CONNECT, array($this, 'onNewConnection'));
         $this->socket->addHandler(Socket::DATA, array($this, 'onData'));
         $loop->register($this->socket);
+
+        //initialise a very basic repository for saving
+        $this->repository = new MysqlRepository();
+    }
+
+    /**
+     * Set or reset a Client to an initial state
+     * @param Client $client
+     */
+    protected function setupClient(Client $client)
+    {
+        $client->attachData('Message', new Message()); //attach a new message to our client
     }
 
     /**
@@ -47,7 +64,7 @@ class Server
      */
     public function onNewConnection(Client $client)
     {
-        $client->attachData('Message', new Message()); //attach a new message to our client
+        $this->setupClient($client);
         $response = new Response('Hello there.', Response::SERVICE_READY, false);
         $client->send("$response");
     }
@@ -59,8 +76,10 @@ class Server
      */
     public function onData(Client $client, $data)
     {
-        //RFC 2821 Page 14 - ASCII only plz.
-        if (!mb_check_encoding($data, 'ASCII')) {
+        echo $data."\n";
+
+        //RFC 2821 Page 14 - 7 bit only plz.
+        if (!mb_check_encoding($data, '7bit')) {
             $response = new Response('syntax error - invalid character',
                                      Response::SYNTAX_ERROR_COMMAND_UNRECOGNISED);
 
@@ -72,12 +91,18 @@ class Server
         $response = $this->commandSet->run($data, $client->getData('Message'));
         if ($response instanceof Response) {
             $client->send("$response");
+            echo $response."\n";
 
             //the command specified that we should now disconnect
             if ($response->hasFlag(Response::FLAG_DISCONNECT)) {
                 $client->disconnect();
             }
-        }
 
+            //the command specified we're done
+            if ($response->hasFlag(Response::FLAG_DONE)) {
+                $this->repository->save($client->getData('Message'));
+                $this->setupClient($client);
+            }
+        }
     }
 }

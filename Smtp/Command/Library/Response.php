@@ -15,7 +15,6 @@ namespace Smtp\Command\Library;
  */
 class Response
 {
-
     /**
      * @var string The response text to give
      */
@@ -94,8 +93,11 @@ class Response
      */
     const FLAG_DISCONNECT = 1;
 
-    //route the subsequent command to me please until I return a non multiline response
+    //route the subsequent command to me please until I return a non multiline
     const FLAG_MULTILINE = 2;
+
+    //Returned from a command to indicate the message is complete
+    const FLAG_DONE = 4;
 
     /**
      * Constructor which provides shortcuts to initialise

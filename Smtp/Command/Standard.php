@@ -9,7 +9,7 @@ namespace Smtp\Command;
 
 
 use Smtp\Command\Library\CommandSet;
-use Smtp\Command\Library\Message;
+use Smtp\Message\Message;
 use Smtp\Command\Library\Response;
 
 /**
@@ -38,7 +38,7 @@ class Standard extends CommandSet
     }
 
     /**
-     * @command MAIL FROM
+     * @command MAIL FROM:
      * This is quite a key command, really.
      * @param string $command What the client said to us
      * @param Message $message The message to modify
@@ -53,13 +53,13 @@ class Standard extends CommandSet
             $pos2 = strrpos($command, '>');
 
             if ($pos1 === 0 && $pos2 !== false) {
-                $address = substr($command, 1, $pos2);
+                $address = substr($command, 1, $pos2 - 1);
                 $message->setReturnPath($address);
 
                 return new Response('OK', Response::MAIL_ACTION_OKAY_COMPLETED);
             } else {
                 return new Response('Syntax error, missing some angle brackets.',
-                                    Response::SYNTAX_ERROR_COMMAND_UNRECOGNISED);
+                                    Response::SYNTAX_ERROR_IN_PARAMETERS);
             }
         }
 
@@ -67,7 +67,7 @@ class Standard extends CommandSet
     }
 
     /**
-     * @command RCPT TO
+     * @command RCPT TO:
      * Set who this email is supposed to go to. Since it is the 21st century we ignore forward paths.
      * @param string $command The command the user has given
      * @param Message $message The message to update
@@ -85,11 +85,11 @@ class Standard extends CommandSet
 
         if ($pos1 !== 0 || $pos2 === false) {
             return new Response('Syntax error, missing some angle brackets.',
-                                Response::SYNTAX_ERROR_COMMAND_UNRECOGNISED);
+                                Response::SYNTAX_ERROR_IN_PARAMETERS);
         }
 
-        $forwardPath = substr($command, 1, $pos2);
-        $finalForwardAddress = explode(',', $forwardPath);
+        $forwardPath = substr($command, 1, $pos2 - 1);
+        $finalForwardAddress = array_pop(explode(',', $forwardPath));
         $message->setForwardPath($finalForwardAddress);
 
         return new Response('OK', Response::MAIL_ACTION_OKAY_COMPLETED);
@@ -109,7 +109,7 @@ class Standard extends CommandSet
         }
 
         if (trim($command) == '.') {
-            return new Response('Right-o', Response::MAIL_ACTION_OKAY_COMPLETED);
+            return new Response('Right-o', Response::MAIL_ACTION_OKAY_COMPLETED, Response::FLAG_DONE);
         }
 
         $message->addData($command);
