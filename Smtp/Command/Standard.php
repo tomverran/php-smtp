@@ -112,7 +112,8 @@ class Standard extends CommandSet
             return new Response('Right-o', Response::MAIL_ACTION_OKAY_COMPLETED, Response::FLAG_DONE);
         }
 
-        $message->addData($command);
+        //helpfully CommandSet strips out crlfs so back they go
+        $message->addData($command . "\r\n");
         return null;
     }
 

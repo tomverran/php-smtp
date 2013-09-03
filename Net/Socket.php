@@ -53,6 +53,9 @@ class Socket implements Pollable
     {
         //create a non-blocking TCP socket to receive emails on
         $this->socket = \stream_socket_server('tcp://127.0.0.1:25');
+        if (!$this->socket) {
+            throw new \Exception('Unable to listen on given port');
+        }
     }
 
     /**
@@ -113,7 +116,13 @@ class Socket implements Pollable
 
                 //else find out what the client
                 //has to say for themselves
-                $data = \fread($socket, 1);
+                $data = @\fread($socket, 1); //sorry about the error suppression, stream_socket_isopen doesn't exist
+
+                if ($data === false) {
+                    socket_close($socket);
+                    unset($this->clients[$id]);
+                    continue;
+                }
 
                 $this->buffers[$id] .= $data;
                 if (substr($this->buffers[$id], -2) == "\r\n") {
