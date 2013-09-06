@@ -36,19 +36,21 @@ class Message
      * We ignore all of it except the final address
      * so this is essentially the To: address.
      */
-    private $forwardPath;
+    private $forwardPaths;
 
     /**
      * @param string $returnPath
      */
-    public function setReturnPath($returnPath) {
+    public function setReturnPath($returnPath)
+    {
         $this->returnPath = $returnPath;
     }
 
     /**
      * @return string
      */
-    public function getReturnPath() {
+    public function getReturnPath()
+    {
         return $this->returnPath;
     }
 
@@ -67,7 +69,7 @@ class Message
     public function reset()
     {
         $this->clientIdentity = null;
-        $this->forwardPath = null;
+        $this->forwardPaths = array();
         $this->returnPath = null;
         $this->data = null;
     }
@@ -94,18 +96,18 @@ class Message
      * Set the forward path of our email
      * @param $forwardPath
      */
-    public function setForwardPath($forwardPath)
+    public function addForwardPath($forwardPath)
     {
-        $this->forwardPath = $forwardPath;
+        $this->forwardPaths[] = $forwardPath;
     }
 
     /**
      * Get the forward path of our email
-     * @return string
+     * @return array
      */
-    public function getForwardPath()
+    public function getForwardPaths()
     {
-        return $this->forwardPath;
+        return $this->forwardPaths;
     }
 
     public function addData($data)

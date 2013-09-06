@@ -53,6 +53,6 @@ class MysqlRepository implements Repository
     public function save(Message $message)
     {
         $query = $this->db->prepare('INSERT INTO `mail` (`from`, `to`, `message`) VALUES(?, ?, ?)');
-        $query->execute(array($message->getReturnPath(), $message->getForwardPath(), $message->getData()));
+        $query->execute(array($message->getReturnPath(), implode(', ', $message->getForwardPaths()), $message->getData()));
     }
 }

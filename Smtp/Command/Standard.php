@@ -88,9 +88,9 @@ class Standard extends CommandSet
                                 Response::SYNTAX_ERROR_IN_PARAMETERS);
         }
 
-        $forwardPaths = explode(',', substr($command, 1, $pos2 - 1));
+        $forwardPaths = explode(':', substr($command, 1, $pos2 - 1));
         $finalForwardAddress = array_pop($forwardPaths);
-        $message->setForwardPath($finalForwardAddress);
+        $message->addForwardPath($finalForwardAddress);
 
         return new Response('OK', Response::MAIL_ACTION_OKAY_COMPLETED);
     }
@@ -103,6 +103,10 @@ class Standard extends CommandSet
      */
     public function data($command, Message $message)
     {
+        if (!count($message->getForwardPaths())) {
+            return new Response('You need to rcpt to', Response::BAD_COMMAND_SEQUENCE);
+        }
+
         if ($message->getData() === null) {
             $message->addData(''); //bit hacky, make our message not null so we get out of this conditional next time
             return new Response('I am all ears', Response::START_MAIL_INPUT, Response::FLAG_MULTILINE);

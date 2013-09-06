@@ -16,4 +16,4 @@ There is no config file, just configure it by editing anything you want to chang
 To run the project clone the git repo, get composer from getcomposer.org then run an update to generate the autoloaders. You then just php smtp.php and let the fun begin.
 
 oh and finally
-## Don't use this in production!
+## Don't use this anywhere remotely near production (or even vaguely significant) code!
