@@ -18,6 +18,11 @@ class Client
     private $socket;
 
     /**
+     * @var bool Are we connected?
+     */
+    private $connected;
+
+    /**
      * An array of any data attached to this client
      * @var mixed[]
      */
@@ -30,6 +35,7 @@ class Client
     public function __construct($socket)
     {
         $this->socket = $socket;
+        $this->connected = true; //Hey, I'm an optimist
     }
 
     /**
@@ -74,13 +80,22 @@ class Client
         return $this->socket;
     }
 
+    /**
+     * Close our underlying socket connection,
+     * so chucking the client off the system
+     */
     public function disconnect()
     {
         \fclose($this->socket);
+        $this->connected = false;
     }
 
+    /**
+     * Did we disconnect the client?
+     * @return bool
+     */
     public function isConnected()
     {
-        return true;
+        return $this->connected;
     }
 }

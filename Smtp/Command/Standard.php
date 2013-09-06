@@ -88,8 +88,8 @@ class Standard extends CommandSet
                                 Response::SYNTAX_ERROR_IN_PARAMETERS);
         }
 
-        $forwardPath = substr($command, 1, $pos2 - 1);
-        $finalForwardAddress = array_pop(explode(',', $forwardPath));
+        $forwardPaths = explode(',', substr($command, 1, $pos2 - 1));
+        $finalForwardAddress = array_pop($forwardPaths);
         $message->setForwardPath($finalForwardAddress);
 
         return new Response('OK', Response::MAIL_ACTION_OKAY_COMPLETED);

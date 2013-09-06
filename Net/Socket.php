@@ -86,10 +86,13 @@ class Socket implements Pollable
      */
     public function poll()
     {
-
         $sockets = array($this->socket);
-        foreach ($this->clients as $client) {
-            $sockets[] = $client->getConnection();
+        foreach ($this->clients as $key => $client) {
+            if ($client->isConnected()) {
+                $sockets[] = $client->getConnection();
+            } else {
+                unset($this->clients[$key]);
+            }
         }
 
         $write = array();
@@ -116,7 +119,7 @@ class Socket implements Pollable
 
                 //else find out what the client
                 //has to say for themselves
-                $data = @\fread($socket, 1); //sorry about the error suppression, stream_socket_isopen doesn't exist
+                $data = \fread($socket, 1);
 
                 if ($data === false) {
                     socket_close($socket);
